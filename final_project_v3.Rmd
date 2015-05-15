@@ -1,0 +1,1396 @@
+---
+title: "Bicycle Rentals exploration by Sreejith Gopinath"
+output:
+  html_document:
+    pandoc_args: [
+      "+RTS", "-K64m",
+      "-RTS"
+    ]
+    theme: united
+    highlight: tango
+    fig_caption: true
+---
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+# Univariate plots section
+
+```{r, echo=FALSE}
+setwd('/Users/sreeg/Exploratory_data_analysis')
+df <- read.csv('hour.csv')
+df_daily <- read.csv('day.csv')
+df_master <- read.csv('hour.csv')
+
+hr_casreg <- subset(df, select=c("hr","casual","registered"))
+df <- subset(df, select = -c(casual, registered))
+```
+
+<span style="color:black">These are the dimensions of the bicycle_rentals 
+dataset</span>
+
+```{r, echo=FALSE}
+dim(df)
+```
+
+<span style="color:black">The features in this dataset are:</span>
+```{r, echo=FALSE}
+colnames(df)
+
+#Change values of certain columns from mere numbers to meaningful words
+df$season[df$season == 1] <- "spring"
+df$season[df$season == 2] <- "summer"
+df$season[df$season == 3] <- "fall"
+df$season[df$season == 4] <- "winter"
+
+df$weathersit[df$weathersit == 1] <- "clear"
+df$weathersit[df$weathersit == 2] <- "mild"
+df$weathersit[df$weathersit == 3] <- "light precip"
+df$weathersit[df$weathersit == 4] <- "heavy precip"
+
+df$weekday[df$weekday == 0] <- "Sunday"
+df$weekday[df$weekday == 1] <- "Monday"
+df$weekday[df$weekday == 2] <- "Tuesday"
+df$weekday[df$weekday == 3] <- "Wednesday"
+df$weekday[df$weekday == 4] <- "Thursday"
+df$weekday[df$weekday == 5] <- "Friday"
+df$weekday[df$weekday == 6] <- "Saturday"
+
+df_daily$weekday[df_daily$weekday == 0] <- "Sunday"
+df_daily$weekday[df_daily$weekday == 1] <- "Monday"
+df_daily$weekday[df_daily$weekday == 2] <- "Tuesday"
+df_daily$weekday[df_daily$weekday == 3] <- "Wednesday"
+df_daily$weekday[df_daily$weekday == 4] <- "Thursday"
+df_daily$weekday[df_daily$weekday == 5] <- "Friday"
+df_daily$weekday[df_daily$weekday == 6] <- "Saturday"
+
+df_master$weekday[df_master$weekday == 0] <- "Sunday"
+df_master$weekday[df_master$weekday == 1] <- "Monday"
+df_master$weekday[df_master$weekday == 2] <- "Tuesday"
+df_master$weekday[df_master$weekday == 3] <- "Wednesday"
+df_master$weekday[df_master$weekday == 4] <- "Thursday"
+df_master$weekday[df_master$weekday == 5] <- "Friday"
+df_master$weekday[df_master$weekday == 6] <- "Saturday"
+
+df$DoW <- factor(df$weekday, levels = c("Sunday", "Monday", "Tuesday", 
+                                       "Wednesday", "Thursday", "Friday", 
+                                       "Saturday"))
+df_daily$DoW <- factor(df_daily$weekday, levels = c("Sunday", "Monday", 
+                                                    "Tuesday", "Wednesday", 
+                                                    "Thursday", "Friday", 
+                                                    "Saturday"))
+df_master$DoW <- factor(df_master$weekday, levels= c("Sunday", "Monday", 
+                                                     "Tuesday", "Wednesday", 
+                                                     "Thursday", "Friday", 
+                                                     "Saturday"))
+#Print out first few records
+head(df)
+
+#Print out unique values of a few columns
+unique(df$weathersit)
+unique(df$season)
+
+str(df)
+
+summary(df)
+```
+<span style="color:black"> <br>Here is a complete list of features in the 
+dataset, along with their meanings:<br><br></span>
+<table border="1">
+  <tr>
+    <th>Feature</th>
+    <th>Explanation</th>
+  </tr>
+  <tr>
+    <th>instant</th>
+    <td><i>Unique identifier for each observation in the dataset.</i></td>
+  </tr>
+  <tr>
+    <th>dteday</th>
+    <td><i>The date for which the observation was recorded.</i></td>
+  </tr>
+  <tr>
+    <th>season</th>
+    <td><i>The prevailing season for which the observation was recorded.
+  <br>1: Spring<br>2: Summer<br>3: Fall<br>4: Winter</i></td>
+  </tr>
+  <tr>
+    <th>yr</th>
+    <td><i>The year for which the observation was recorded. 0: 2011, 1:2012.
+    </i><br></td>
+  </tr>
+  <tr>
+    <th>mnth</th>
+    <td><i> The month for which the observation was recorded. 1-Jan to 
+12-Dec.</i></td>
+  </tr>
+  <tr>
+    <th>hr</th>
+    <td><i> The hour, in 24-hour-format, for which the observation was
+recorded.</i></td>
+  </tr>
+  <tr>
+    <th>holiday</th>
+    <td><i>Whether the observation was recorded for holiday or a working day.
+    </i></td>
+  </tr>
+  <tr>
+    <th>weekday</th>
+    <td><i>The day of the week for which the observation was recorded.</i><br>
+    </td>
+  </tr>
+  <tr>
+    <th>workingday</th>
+    <td><i> If the day of observation is neither weekend nor holiday, then this
+    value is 1, otherwise it is 0.</i></td>
+  </tr>
+  <tr>
+    <th>weathersit</th>
+    <td><i>Weather situation prevailing on the day of observation:
+      <br> <t>- 1: Clear, Few clouds, Partly cloudy, Partly cloudy<br>
+           <t>- 2: Mist + Cloudy, Mist + Broken clouds, Mist + Few clouds, 
+           Mist<br>
+           <t>- 3: Light Snow, Light Rain + Thunderstorm + Scattered clouds, 
+           Light Rain + Scattered clouds<br>
+           <t>- 4: Heavy Rain + Ice Pallets + Thunderstorm + Mist, Snow + Fog
+           </i><br></td>
+  </tr>
+  <tr>
+    <th>temp</b></th>
+    <td><i>Normalized temperature in Celsius, on the day of observation. The 
+           values are divided to 41 (max).</i></td>
+  </tr>
+  <tr>
+    <th>atemp</b></th>
+    <td><i>Normalized feeling temperature in Celsius. The values are divided to 
+    50 (max).</i></td>
+  </tr>
+  <tr>
+    <th>hum</th>
+    <td><i>Normalized humidity. The values are divided to 100 (max).</i></td>
+  </tr>
+  <tr>
+    <th>windspeed</th>
+    <td><i>Normalized wind speed. The values are divided to 67 (max).</i></td>
+  </tr>
+  <tr>
+    <th>casual</th>
+    <td><i>count of casual users.</i></td>
+  </tr>
+  <tr>
+    <th>registered</th>
+    <td><i> count of registered users.</i></td>
+  </tr>
+  <tr>
+    <th>cnt</th>
+    <td><i>count of total rental bikes including both casual and registered.</i>
+    </td>
+  </td>
+</table>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+## <i>Sounds interesting!!</i><br>
+<span style="color:black"><br>We see that the minimum ridership values on any 
+given day is 1 and the maximum on any given day is just shy of 1000.</span>
+
+```{r, echo=FALSE}
+lowest_ridership <- subset(df_daily[order(df_daily$cnt, decreasing=F),])
+lowest_ridership <- lowest_ridership[,c("dteday","cnt")]
+head(lowest_ridership)
+```
+
+<span style="color:black">We see from the preceding dataframe dump that the 
+lowest ever bicycle rentals in our dataset happened on 29th October 2012. A 
+simple web search shows us that this was the day Hurricane Sandy made landfall 
+in the Washington DC area - a majority of schools, colleges and offices had 
+shut down! The next low occurred on 27th January 2011. On this day, it was a 
+blizzard that had shut down Washington DC! Thus, analyzing transportation 
+statistics over a period of time and co-relating incidents that correspond to 
+variations to the trend, may help us build predictive models.</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+<span style="color:black">Let us look at some plots now.<br></span>
+```{r, echo=FALSE}
+library(ggplot2)
+library(reshape2)
+library(GGally)
+library(scales)
+library(memisc)
+library(lattice)
+library(MASS)
+library(plyr)
+```{r, out.width = '33%', echo = FALSE, message = FALSE}
+ggplot(aes(x=yr, y=cnt), data=df_master) + 
+  geom_bar(fill="#006633", stat="identity") + 
+  xlab("Year") +
+  ylab("Total count") +
+  ggtitle("Total users year-over-year")
+ggplot(aes(x=yr, y=casual), data=df_master) + 
+  geom_bar(fill="#006633", stat="identity") + 
+  xlab("Year") +
+  ylab("Casual user count") +
+  ggtitle("Casual users year-over-year")
+ggplot(aes(x=yr, y=registered), data=df_master) + 
+  geom_bar(fill="#006633", stat="identity") + 
+  xlab("Year") +
+  ylab("Registered user count") +
+  ggtitle("Registered users year-over-year")
+```
+
+<span style="color:black">The first plot on the left shows the total number of 
+users renting bicycles in each of the two years for which we have data. At a 
+very high level, we see that the total number of users in the initial year are 
+outnumbered by the total number of users in the subsequent year. I attribute 
+this trend to a number of possible factors like rise in popularity of the rental 
+service, increase in the travelling population and increase in the crowding 
+factor on other modes of public transportation.<br><br>The second plot shows the 
+total number of casual users renting bicycles in the two years for which we have 
+data. We see that the total number of casual users in the initial year are 
+outnumbered by the total number of users in the subsequent year.<br><br>The last 
+plot shows the total number of registered users renting bicycles in the two 
+years for which we have data. We see that the total number of registered users 
+in the initial year are outnumbered by the total number of users in the 
+subsequent year. We also see that the year-over-year increase in registered 
+users is greater than the year-over-year increase in casual users. This may be 
+due to casual-to-registered user conversion, or simply more people choosing to 
+register than rent casually.<br><br>I chose to include these plot because I
+wanted to look at the overall trends and whether there were any opposing trends 
+among casual and registered users. We do not see any opposing trends, but it 
+looks like registered ridership is signaling the popularity of the service.
+</span>
+
+```{r, echo=FALSE}
+ggplot(aes(cnt), data=df) + 
+  geom_histogram(binwidth=10, position="identity", fill="#006633") + 
+  scale_y_log10() + 
+  xlab("Year") +
+  ylab("Frequency") +
+  ggtitle("Total bicycle rentals")
+```
+
+<span style="color:black">The bicycle rental frequencies seem to progressively 
+decline for higher counts. I chose to include this plot because I wanted to 
+convey a sense of popularity for the service. We see that daily/hourly instances
+with lower total bicycle rentals happen more frequently than daily/hourly 
+instances with higher total rentals.<br><br>I wonder how the frequencies will 
+vary by season and weather conditions.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(x=weathersit, y=cnt), data=df) + 
+  stat_summary(fun.y=median, geom="bar", fill="#006633") + 
+  xlab("Prevailing weather situation") +
+  ylab("Median rental count") +
+  ggtitle("Median bicycle rentals by prevailing weather situation")
+```
+
+<span style="color:black">As is intuitive, we see that bicycle rentals are 
+highest when the weather is clear, next highest when the weather is just misty, 
+a few brave souls renting bicycles when there is light precipitation and least 
+when there is heavy precipitation. I chose to include this plot because bicycle
+transportation is open to the elements and is therefore very different from 
+other modes of transportation. I wanted to get an initial sense of whether the
+prevailing conditions played a major role in influencing bicycle rentals.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(x=season, y=cnt), data=df) + 
+  stat_summary(fun.y=median, geom="bar", fill="#006633") + 
+  xlab("Prevailing season") +
+  ylab("Median rental count") +
+  ggtitle("Median hourly total bicycle rentals by season")
+```
+
+<span style="color:black">I cannot fathom the reason for this, but it looks like
+bicycle rentals are highest in the fall, next highest in summer, third in winter
+and lowest in spring. As in the previous plot, I wanted to explore whether
+prevailing conditions played a part in influencing bicycle rentals. Looking at
+the seasonal trends, we get a fair sense of how general cold weather/warm 
+weather, etc. influence bicycle rentals.</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+<span style="color:black">Next, I subset-ed the data into two groups - one 
+subset for holidays and one subset for working days. Here are the summaries of 
+the bicycle rental numbers for the respective subsets:</span>
+
+```{r, echo=FALSE}
+df_working <- subset(df, holiday == 0)
+df_holiday <- subset(df, holiday == 1)
+summary(df_working$cnt)
+summary(df_holiday$cnt)
+```
+
+<span style="color:black">From the preceding stats, we see that, all else set 
+aside, bicycle rental numbers are higher on working days than on holidays - 
+indicating that bicycle rentals may not be for recreational use.</span>
+
+<span style="color:black">Next, let's explore how bicycle rentals stack up by 
+day of the week.</span>
+
+```{r,  out.width = '50%', echo = FALSE, message = FALSE}
+ggplot(aes(x=DoW, y=cnt, group="DoW"), data=df) + 
+  stat_summary(fun.y=mean, geom="line", colour="red") +
+  xlab("Day of the week") +
+  ylab("Mean daily count") +
+  ggtitle("Mean daily total bicycle rentals")
+
+ggplot(aes(x=hr, y=cnt), data=df) + 
+  scale_x_continuous(breaks=-1:24) + 
+  stat_summary(fun.y=median, geom="line", color="red") + 
+  xlab("Hour of the day") +
+  ylab("Median hourly count") +
+  ggtitle("Median hourly total bicycle rentals")
+```
+
+<span style="color:black">From the plot on the left, we see that the busiest day 
+for bicycle rentals is Friday, and the least busy day is Sunday. Rental numbers 
+climb up through the work week and then fall off on the weekend.<br><br>From the
+plot on the right, we see that bicycle rentals peak at 8:00am and 5:00pm and 
+drop off on either side, suggesting that the peaks may be driven up by people 
+using bicycles to get to and from work.<br><br>I chose to include these plots 
+because I wanted to see whether there were any particular days that were busiest
+and any that were less busy, as also the busier hours of the day as well the 
+less busy ones.</span>
+
+```{r,  out.width = '50%', echo = FALSE, message = FALSE}
+ggplot(aes(x=DoW, y=cnt), data=df) + 
+  geom_boxplot(fill="maroon") + 
+  ylim(0, 300) +
+  xlab("Day of the week") +
+  ylab("Total rental count") +
+  ggtitle("Total bicycle rentals by day of the week")
+ggplot(aes(x=factor(hr), y=cnt), data=df) + 
+  geom_boxplot(fill="maroon") + 
+  ylim(0, 300) +
+  xlab("Hour of the day") +
+  ylab("Total rental count") +
+  ggtitle("Total bicycle rentals by hour of the day")
+```
+
+<span style="color:black"><br>The plot on the left shows the daily total bicycle
+rentals by the day of the week. In the previous section, we saw which were the
+busiest days of the week for bicycle rentals; I chose this plot so that we could
+see how noisy the data really is. During the weekend, we see the least variance,
+while we see greater variance for data on Monday and Wednesday.<br><br>The plot 
+on the right shows the hourly total bicycle rentals. In the previous section, we 
+saw which were the busiest hours of the day for bicycle rentals; I chose this 
+plot so that we could see how noisy the datareally is. This plot turned out to 
+be really interesting; we see the medians following the trend we saw in the 
+previous section and we also see that most of the variance in bicycle rental 
+hours happens during the middle portion of the day. I have limited the y-axis to
+a value of 300, so that the outliers are eliminated and the charts are most 
+readable.</span>
+
+```{r, echo = FALSE}
+ggplot(aes(x=hr, y=cnt, col=factor(holiday)), data=df) + 
+  scale_x_continuous(breaks=-1:24) + 
+  stat_summary(fun.y=median, geom="line") + 
+  xlab("Hour of day") +
+  ylab("Median rental count") +
+  ggtitle("Median hourly total bicycle rentals on working days")
+```
+
+<span style="color:black">The preceding plot shows the median total bicycle 
+rentals on working days for each hour of the day(line in red). On working days, 
+the trend is pretty close to the trends overall, suggesting that bicycle rentals 
+are primarily driven by office/school-goers. This plot continues the exploration 
+from where we left off in the previous plot. The line in blue shows 
+bicycle rentals by the hour on holidays. The plot for holidays shows higher 
+numbers during the middle portion of the day. I chose these plots because I 
+wanted to see if the hourly trends on working days matched the hourly trends on 
+all days. It does follow closely, reinforcing our belief that bicycle rentals 
+are primarily used by commuters.</span>
+
+<span style="color:black">Let us now see how the numbers of casual and 
+registered renters vary by the day of the week and the hour of the day.</span>
+
+```{r,  out.width = '50%', echo = FALSE, message = FALSE}
+day_casreg <- subset(df_daily, select=c("DoW","casual","registered"))
+day_casreg <- melt(day_casreg, id.vars="DoW")
+ggplot(aes(x=DoW, y=value, fill=variable), data=day_casreg) + 
+  geom_bar(position="dodge", binwidth=1, fun.y=median, stat="identity") +
+  xlab("Day of the week") +
+  ylab("Median daily rental count") +
+  ggtitle("Median daily bicycle rentals")
+
+hr_casreg <- melt(hr_casreg, id.vars="hr")
+ggplot(hr_casreg, aes(hr, value, col=variable)) + 
+  scale_x_continuous(breaks=-1:24) + 
+  stat_summary(fun.y=median, geom="line") + 
+  xlab("Hour of the day") +
+  ylab("Median rental count") +
+  ggtitle("Median hourly bicycle rentals")
+```
+
+<span style="color:black">From plot on the left, we see that casual 
+ridership is higher on weekends than on weekdays, while the trend is reversed 
+for registered ridership. We also see that the hourly ridership plot for 
+registered riders is similar to the overall hourly ridership plot - which means 
+that rental registration is a pretty good predictor of bicycle rentals.<br><br>
+Though this plot may have better belonged in the bivariate section, I chose to
+include this plot here because it nicely wraps up the conclusions drawn in the
+preceding graphs. We see how registered users(more likely commuter than not)
+drive up rentals in the middle portion of the week while casual(more likely to
+be recreational users than not) drive up rentals during the weekend.</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+# Univariate analysis
+
+<span style="color:black"><b><i>What is the structure of your dataset?</i></b>
+</span><br>
+<span style="color:red">I am working with the bicycle rentals dataset, which 
+contains bicycle rentals information at an agency in Washington DC., for the 
+years 2011-2012. The dataset also contains weather data for the same days as the
+bicycle rentals.<br><br>The dataset contains 731 daily records as well as 17379
+hourly records for bicycle rentals at one agency in the city.<br><br>There are 
+17 features in the hourly dataset, and they are listed here:<br><b>instant</b> -
+An index for the record<br><b>dteday</b> - The date<br><b>season</b> - The 
+prevailing climatic season<br><b>yr</b> - Year<br><b>mnth</b> - Month<br><b>hr
+</b> - The hour of observation<br><b>holiday</b> - Whether or not the particular
+day was a holiday(weekends are counted as holidays too)<br><b>weekday</b> - The 
+day of the week<br><b>workingday</b> - Whether or not the particular day was a 
+working day(inverse of the holiday value)<br><b>weathersit</b> - What kind of 
+weather prevailed on the particular day<br><b>temp</b> - The hourly temperature
+<br><b>atemp</b> - The average temperage for the day<br><b>hum</b> - The 
+humidity on the particular day<br><b>windspeed</b> - The windspeed on the 
+particular day<br><b>casual</b> - The number of rentals by non-registered 
+customers<br><b>registered</b> - The number of rentals by registered customers
+<br><b>cnt</b> - Total number of rentals</span>
+
+<span style="color:red">The variables <i>weathersit</i>, <i>season</i>, 
+<i>holiday</i> and <i>workingday</i> are categorical variables.<br><b>weathersit
+</b> has four states that I have simplified into: <i>clear</i>, <i>misty</i>, 
+<i>light_precipi</i>(light rain/snow) and <i>heavy_precipi</i>(heavy rain/sleet/
+snow).<br><b>season</b> has four states: <i>spring</i>, <i>summer</i>, <i>fall
+</i> and <i>winter</i>.<br><b>holiday</b> and <b>workingday</b> are categorical 
+variables that have binary values and orthogonal with each other in each 
+observation.<br><br>Other observations:<br>1) Most bicycle rentals are made by 
+registered customers than casual customers.<br>2) More bicycle rentals are made 
+by people that are commuting to their jobs/schools than recreational customers.
+<br>3)Bicycle rentals are higher in dry weather than wet weather.</span>
+
+<span style="color:black"><b><i>What is/are the main feature(s) of interest in 
+your dataset?</i></b></span><br>
+<span style="color:red">The main feature of interest in the dataset is the 
+bicycle rental count. I am trying to build a prediction model for bicycle 
+rentals. From our univariate analyses, we have seen that the general weather 
+situation and season have pretty good predictive power.</span>
+
+<span style="color:black"><b><i>What other features in the dataset do you think 
+will help support your investigation into your feature(s) of interest?</i></b>
+</span><br>
+<span style="color:red">We need to analyse some more to build a prediction model
+with higher confidence.<br>I suspect windspeed, humidity and temperature will 
+play a role in predicting bicycle rentals, but we shall see.</span>
+
+<span style="color:black"><b><i>Did you create any new variables from existing 
+variables in the dataset?</i></b></span><br>
+<span style="color:red">No, I did not. Had the total count of bicycle rentals 
+been missing, I could have used "casual" and "registered" to derive the total 
+count.</span>
+
+<span style="color:black"><b><i>Of the features you investigated, were there any
+unusual distributions? Did you perform any operations on the data to tidy, 
+adjust, or change the form of the data? If so, why did you do this?</span></i>
+</b><br>
+<span style="color:red">I log-transformed the total bicycle rentals for each 
+day, to get a sense for the distribution.<br>1) When I looked at the 
+distribution of total bicycle rentals as a whole, I found that the lower numbers
+occurred far more frequently. There was a tiny gap in the frequencies around the
+mark, which remains unexplained.<br>2) When I plotted the busiest hours of the 
+day overall, I saw two peaks, which corresponded to the commute hours.<br>3) 
+When I looked at the mean trends on a daily basis, I see that registered users 
+rented mainly during the work week and lesser on weekends. For casual users, 
+this trend was reversed - casual users rented less during the work week than on 
+weekends.<br><br>I did not have to do anything to clean the dataset.</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+# Bivariate plots section
+
+<span style="color:black">From the univariate analyses performed so far, I have 
+seen that some features tend to correlate with each other. For example, average 
+temperatures and precipitation seem to correlate with the season in a broader 
+sense; these variables also seem to correlate with the weather situation in a 
+much more specific sense.</span>
+
+```{r, out.width='100%', echo=FALSE}
+set.seed(2050)
+df_sample <- df[sample(1:length(df$cnt), 5000),]
+colnames(df_sample)[7] <- "hday"
+colnames(df_sample)[8] <- "wday"
+colnames(df_sample)[10] <- "wthr"
+colnames(df_sample)[14] <- "wind"
+options(warn=-1)
+ggpairs(df_sample, columns=c(3,4,5,6,7,8,10,12,13,14,15), 
+        params = c(shape = I('.'), outliers.shape = I('.'), list(corSize=5)), 
+        axisLabels = "none")
+```
+<span style="color:black"><br><br><br>A quick look at the correlation data shows
+that bicycle rentals are mostly influenced by the feeling temperature and hour 
+of the day. I chose to include the correlation chart because it shows
+correlation scores for different pairs of features and therefore will give us a
+good idea of what relationships we should be exploring in detail.<br>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+<br>I will now explore some scatter plots involving total bicyle rentals 
+together with normalized daily feeling temperatures, humidity and windspeed.
+</span>
+
+```{r, echo=FALSE}
+ggplot(df, aes(x=atemp, y=cnt)) + 
+  geom_jitter(alpha = 0.1, size=1) + 
+  geom_smooth(method = "loess") + 
+  xlab("Normalized feeling temperature") +
+  ylab("Total rental count") +
+  ggtitle("Scatterplot of total bike rentals Vs normalized feeling temperature")
+```
+<span style="color:black"><br><br>From the preceding plot, we can see that 
+bicycle rentals gradually climbs up as the temperature increases, and is lowest 
+at the extremeties, ie., when the feeling temperatures are at their lowest and 
+highest. From the correlation chart above, we see a positive correlation between
+the total bicycle rental numbers and the prevailing temperatures, with a 
+correlation score of 0.397. I chose to include this plot because we saw in the 
+previous section how prevailing weather conditions influence bicycle rentals. I 
+wanted to see whether prevailing temperatures had any role to play.</span>
+
+```{r, echo=FALSE}
+ggplot(df, aes(x=hum, y=cnt)) +
+  geom_jitter(alpha=0.1, size=1) + 
+  geom_smooth(method = "loess") + 
+  xlab("Normalized humidity") +
+  ylab("Total rental count") +
+  ggtitle("Scatterplot of total bicycle rentals Vs humidity")
+```
+<span style="color:black"><br><br>From the preceding plots, we see that most 
+bicycle rentals occur when the normalized humidity is between 0.30-0.80.Taking a
+closer look at the rental number distributions between normalized humidities of 
+0.75-1.0, we see that there are certain "pockets" of distributions. At this 
+point, it is not entirely clear what might be causing these distributions. It 
+may be because certain values of normalized humidity never occur. From the 
+correlation chart above, we see that there is a negative correlation
+between the total bicycle rental numbers and the prevailing humidity, with a 
+correlation score of -0.325. I chose to include this plot because it helps us 
+reinforce in greater details the relationship between the total number of 
+bicycle rentals and the prevailing humidity that was revealed by the correlation 
+chart.</span>
+
+```{r, echo=FALSE}
+ggplot(df, aes(x=windspeed, y=cnt)) +
+  geom_jitter(alpha = 0.1, size=1) + 
+  geom_smooth(method = "loess") + 
+  xlab("Windspeed") +
+  ylab("Total rental count") +
+  ggtitle("Scatterplot of total bicycle rentals Vs windspeed")
+```
+
+<span style="color:black"><br><br>From the preceding plots, we see that bicycle 
+rentals are pretty steady at lower windspeeds, dropping off at higher windspeeds
+. In the correlation chart above, we see that the correlation between total 
+bicycle rental numbers and the prevailing windspeeds is posistive, but weak, 
+with a correlation score of 0.0893. I chose to include this plot because it 
+nicely wraps up our investigation into how the three main weather factors 
+influence bicycle rentals individually.<br><br>I chose to include scatterplots 
+in the above charts to investigate if there were any patterns. I did not see any 
+particular patterns, other than the fact that a combination of moderate-high 
+humidity, moderate temperature and low-moderate windspeeds might work well for 
+bicycle renters!</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+```{r, echo=FALSE}
+#Change values of certain columns from mere numbers to meaningful words
+df$season[df$season == 1] <- "spring"
+df$season[df$season == 2] <- "summer"
+df$season[df$season == 3] <- "fall"
+df$season[df$season == 4] <- "winter"
+
+df$weathersit[df$weathersit == 1] <- "clear"
+df$weathersit[df$weathersit == 2] <- "misty"
+df$weathersit[df$weathersit == 3] <- "light_precipitation"
+df$weathersit[df$weathersit == 4] <- "heavy_precipitation"
+
+df$weekday[df$weekday == 0] <- "Sunday"
+df$weekday[df$weekday == 1] <- "Monday"
+df$weekday[df$weekday == 2] <- "Tuesday"
+df$weekday[df$weekday == 3] <- "Wednesday"
+df$weekday[df$weekday == 4] <- "Thursday"
+df$weekday[df$weekday == 5] <- "Friday"
+df$weekday[df$weekday == 6] <- "Saturday"
+df$DoW <- factor(df$weekday, levels= c("Sunday", "Monday", "Tuesday", 
+                                       "Wednesday", "Thursday", "Friday", 
+                                       "Saturday"))
+ggplot(aes(x=atemp, fill=weathersit), data=df) + 
+  geom_bar(position="dodge", binwidth=0.05) +
+  xlab("Normalized feeling temperature") +
+  ylab("Total rental count") +
+  ggtitle("Total bicycle rentals Vs normalized feeling temperatures")
+```
+
+<span style="color:black"><br><br>From the preceding plot, we see that bicycle 
+rentals mostly happen in "moderate" feeling temperature. We see that clear 
+weather rentals occur across the spectrum of feeling temperature. We also see 
+that bicycle rentals in misty and light precipitation weather situations happen 
+in a much narrower band of temperature. A peak stands out at a normalized 
+feeling temperature of about 0.63, and we see that the rentals spike in clear, 
+light precipitation and misty weather. Of course, very few rentals occur during 
+periods of heavy precipitation.<br><br>Since the weather factors tend to 
+straddle seasons and even occur unseasonally, I included this chart to explore 
+how bicycle rentals vary with the feeling temperatures. Overlaying it with the
+prevailing weather situation shows us the the different weather situations in
+which the temperature values occur.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(x=hum, fill=weathersit), data=df) + 
+  geom_bar(position="dodge", binwidth=0.05) +
+  xlab("Humidity") +
+  ylab("Total rental count") +
+  ggtitle("Total bicycle rentals Vs humidity")
+```
+
+<span style="color:black"><br><br>From the preceding plot, we see that most of 
+the humidity range is dominated by clear weather and this is where a bulk of 
+bicycle rentals take place. We do see a few peaks towards the higher end of the 
+humidity spectrum, and this quartile seems to be dominated by misty weather for 
+the most part and precipitative weather to a lesser extent.<br><br>Since the 
+weather factors tend to straddle seasons and even occur unseasonally, I included 
+this chart to explore how bicycle rentals vary with the prevailing humidity. 
+Overlaying it with the prevailing weather situation shows us the the different 
+weather situations in which the humidity values occur.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(x=windspeed, fill=weathersit), data=df) + 
+  geom_bar(position="dodge", binwidth=0.05) +
+  xlab("Windspeed") +
+  ylab("Total rental count") +
+  ggtitle("Total bicycle rentals Vs windspeed")
+```
+
+<span style="color:black"><br><br>From the preceding plot, we see that most of 
+the bicycle rentals happen in the first two quartiles of normalized windspeed. 
+Rentals are highest when the normalized windspeed is 0, in fact. Beyond a 
+normalized windspeed of 0.30, however, bicycle rentals fall away steadily and 
+are almost non-exixtent in very windy weather. Most of the visible spectrum is 
+dominated by clear weather.<br><br>Since the weather factors tend to straddle 
+seasons and even occur unseasonally, I included this chart to explore how 
+bicycle rentals vary with the prevailing windspeed. Overlaying it with the 
+prevailing weather situation shows us the the different weather situations in 
+which the windspeed values occur.<br><br>In fact, most of the bicycle rentals 
+happen in clear weather, as shown by the summary below.</span>
+
+```{r, echo=FALSE}
+do.call(rbind , by(df$cnt, df$weathersit, summary))
+```
+
+<span style="color:black"><br>Let's also look at a summary of bicycle 
+rentals by season.</span>
+
+```{r, echo=FALSE}
+do.call(rbind, by(df$cnt, df$season, summary))
+```
+
+<span style="color:black"><br>From the above summary, it looks like bicycle 
+rentals are high in the fall and summer and taper off in the winter and spring.
+<br><br>Let's now look at the number of casual bicycle rentals per season.
+</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+```{r,  out.width = '50%', echo = FALSE, message = FALSE}
+df_master$season[df_master$season == 1] <- "spring"
+df_master$season[df_master$season == 2] <- "summer"
+df_master$season[df_master$season == 3] <- "fall"
+df_master$season[df_master$season == 4] <- "winter"
+df_master$weathersit[df_master$weathersit == 1] <- "clear"
+df_master$weathersit[df_master$weathersit == 2] <- "mild"
+df_master$weathersit[df_master$weathersit == 3] <- "light precip"
+df_master$weathersit[df_master$weathersit == 4] <- "heavy precip"
+df_master$weekday[df_master$weekday == 0] <- "Sunday"
+df_master$weekday[df_master$weekday == 1] <- "Monday"
+df_master$weekday[df_master$weekday == 2] <- "Tuesday"
+df_master$weekday[df_master$weekday == 3] <- "Wednesday"
+df_master$weekday[df_master$weekday == 4] <- "Thursday"
+df_master$weekday[df_master$weekday == 5] <- "Friday"
+df_master$weekday[df_master$weekday == 6] <- "Saturday"
+
+df_master$DoW <- factor(df_master$weekday, levels= c("Sunday", "Monday", 
+                                                     "Tuesday", "Wednesday", 
+                                                     "Thursday", "Friday", 
+                                                     "Saturday"))
+
+ggplot(aes(x=season, y=casual), data=df_master) + 
+  stat_summary(fun.y=mean, geom="bar", fill="#006633") + 
+  xlab("Prevailing season") +
+  ylab("Casual rental count") +
+  ggtitle("Casual bicycle rentals by prevailing season")
+ggplot(aes(x=season, y=registered), data=df_master) + 
+  stat_summary(fun.y=mean, geom="bar", fill="#006633") + 
+  xlab("Prevailing season") +
+  ylab("Mean rental count") +
+  ggtitle("Registered bicycle rentals by prevailing season")
+```
+
+<span style="color:black">In the plot on the left, we see bar plots for casual
+bicycle rentals by the prevailing season. We see that casual ridership is
+highest in fall, followed by summer, spring and winter. In the plot on the 
+right, we see bar plots for registered bicycle rentals by the prevailing season.
+As in the case of casual users, we see that ridership is highest in summer. For 
+registered users, though, next highest is in winter followed by spring. As in 
+the case of casual users, lowest ridership occurs in spring.<br><br>I chose to 
+include these plots because we can, at a glance, see how the seasonal trends
+for bicycle rentals differs for casual renters and registered renters.</span>
+
+```{r,  out.width = '50%', echo = FALSE, message = FALSE}
+ggplot(aes(x=atemp, y=casual), data=df_master) + 
+  geom_bar(fill="#006633", stat="identity") + 
+  xlab("Normalized feeling temperatures") +
+  ylab("Casual rental count") +
+  ggtitle("Casual rentals Vs prevailing temperature")
+ggplot(aes(x=atemp, y=registered), data=df_master) + 
+  geom_bar(fill="#006633", stat="identity") + 
+  xlab("Normalized feeling temperatures") +
+  ylab("Registered rental count") +
+  ggtitle("Registered bicycle rentals Vs prevailing temperature")
+```
+
+<span style="color:black">In the plot on the left, we see how casual bicycle
+rentals stack up against the prevailing temperature. The highest number of 
+casual bicycle rentals happen between normalized temperatures of 0.55 and 0.75.
+<br><br>In the plot on the right, we see how registered bicycle rentals stack up 
+against the prevailing temperatures. As in the case of casual riders, normalized
+temperatures 0.48 to 0.75 seem to be most popular.<br><br>I chose to include 
+these plots because it is interesting to see how the distribution of casual and 
+registered bicycle rentals each vary by the prevailing temperatures. It also 
+helps us appreciate that the relationship between bicycle rental numbers and
+prevailing temperatures is non-linear and why temperature may not have too much 
+of an influence on a linear model built to predict casual bicycle rentals.
+</span>
+
+```{r,  out.width = '50%', echo = FALSE, message = FALSE}
+ggplot(aes(x=hum, y=casual), data=df_master) + 
+  geom_bar(fill="#006633", stat="identity") + 
+  xlab("Humidity") +
+  ylab("Casual rental count") +
+  ggtitle("Casual bicycle rentals Vs humidity")
+ggplot(aes(x=hum, y=registered), data=df_master) + 
+  geom_bar(fill="#006633", stat="identity") + 
+  xlab("Humidity") +
+  ylab("Registered rental count") +
+  ggtitle("Registered bicycle rentals Vs humidity")
+```
+
+<span style="color:black">In the plot on the left, we see how casual bicycle
+rentals stack up against the prevailing humidity. We see that normalized
+humidity ranges between 0.30 and 0.55 seem to be very popular among casual
+bicycle rentals.<br><br>In the plot on the right, we explore how registered
+bicycle rentals stack up against the prevailing humidity. For registered
+users, we see that normalized humidity values between 0.30 and 0.75 are most
+popular among registered riders.<br><br>I chose to include these plots because 
+it helps us appreciate that the relationship between bicycle rental numbers and
+the prevailing humidity is non-linear and why the humidity factor is likely to
+not have a great influence on any linear model we build to predict bicycle
+rentals.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(x=windspeed, y=cnt), data=df_master) + 
+  geom_bar(fill="#006633", stat="identity") + 
+  xlab("Windspeed") +
+  ylab("Total rental count") +
+  ggtitle("Total bicycle rentals Vs windspeed")
+```
+
+<span style="color:black">In the preceding plot, we see how total bicycle
+rentals stack up against the prevailing wind conditions. We see that bicycle
+rentals are highest when the windspeed is low, dropping off as the prevailing
+windspeed picks up.<br><br>The correlation between bicycle rentals and windspeed 
+is very low, as evidenced by the correlation chart we saw earlier. However, I 
+chose to include this plot because it shows the distribution of bicycle rental 
+numbers across the spectrum of windspeed and helps us appreciate the fact that 
+there is no linear relationship between the two.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(registered), data=df_master) + 
+  geom_bar(fill="#006633", binwidth=5) + 
+  ggtitle("Frequency plot of individual registered rentals")
+```
+<span style="color:black"><br>The preceding plot is a frequency plot of bicycle 
+rentals. Most rentals happen in small numbers at a time, which shows that the
+popularity of the service is still picking up. As popularity increases, we
+should expect to see more occurences of higher number of bikes per day.</span>
+
+<span style="color:black">Though the number of registered riders using the 
+service is consistently higher than the number of casual renters, we see that 
+the general trends remain the same. Registered users seem to be a little more 
+loyal than casual users, in that the winter ridership is about the same as the 
+summer ridership - whereas it is much lower in the case of casual users.<br><br>
+I chose to include this plot in the report because this chart shows what we may
+call the "popularity score" for the bicycle rental service as a whole.<br>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+We have already seen that average feeling temperatures and hour of the day are 
+the main influencers of bicycle rentals. Let's look at how different weather 
+conditions vary with the categorical variables.<br><br>We already have a feel 
+for how feeling temperatures are connected with weather conditions. We will see 
+how average feeling temperatures vary by season.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(x=season, y=atemp), data=df_master) + 
+  geom_boxplot(fill="maroon") + 
+  xlab("Prevailing season") +
+  ylab("Normalized feeling temperatures") +
+  ggtitle("Normalized feeling temperatures by season")
+do.call(rbind, by(df$atemp, df$season, summary))
+```
+
+<span style="color:black"><br>The feeling temperatures are highest in fall and 
+summer, followed by spring and winter. This follows the general trend of bicycle
+rentals by season. I chose to plot this chart because I wanted to explore the
+relationship between the different seasons and prevailing temperatures in a
+given season. With a boxplot, I am able to see the median value for each season,
+as well as the outliers.<br><br>Let's now look at the trend of humidity by 
+seasons.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(x=season, y=hum), data=df_master) + 
+  geom_boxplot(fill="maroon") + 
+  xlab("Prevailing season") +
+  ylab("Normalized humidity") +
+  ggtitle("Humidity by season")
+do.call(rbind, by(df$hum, df$season, summary))
+```
+
+<span style="color:black"><br>Humidity values are highest in winter, about the 
+same in fall and summer, and lowest in spring. This is contrary to the trends we
+see for bicycle rentals. This reinforces our finding that humidity is not a 
+great predictor of bicycle rentals. I chose to include this plot because I 
+wanted to explore the relationship between the humidity and season features. I
+chose a boxplot because it lets us see the seasonal medians as well as any noisy
+data points.<br><br>Let us take a look at how windspeeds influence bicycle 
+rentals.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(x=season, y=windspeed), data=df_master) + 
+  geom_boxplot(fill="maroon") + 
+  xlab("Prevailing season") +
+  ylab("Windspeed") +
+  ggtitle("Windspeed by season")
+do.call(rbind, by(df$windspeed, df$season, summary))
+```
+
+<span style="color:black">Windspeeds are highest in spring and summer, and about
+the same in fall and winter. This trend is contrary to the bicycle rental trends
+.<br><br>From the preceding boxplots, we see that only average feeling 
+temperature trends mimic that of bicycle rentals. The choice of the preceding
+boxplots was driven by my desire to explore the relationship between features
+and how they strengthen or weaken each other. I used boxplots because while a 
+particular range of values of a given feature is dominant for the season,
+unseasonal values do occur; I wanted to quantify how frequent these unseasonal
+values would be.</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+```{r, echo=FALSE}
+reg <- lm(formula = cnt ~ registered, data = df_master)
+summary(reg)
+```
+
+<span style="color:black"><br>The linear model above shows how the registered
+user count influences the total count. We see that the correlation is pretty
+high, with an r^2 value of 0.945.<br></span>
+
+```{r, echo=FALSE}
+reg <- lm(formula = cnt ~ temp, data = df_master)
+summary(reg)
+```
+
+<span style="color:black"><br>The linear model above shows how the prevailing
+temperatures influence the total bicycle rental count. There is a moderate
+correlation, with an r^2 value of 0.1638.<br></span>
+
+```{r, echo=FALSE}
+reg <- lm(formula = cnt ~ hr, data = df_master)
+summary(reg)
+```
+
+<span style="color:black"><br>The linear model above shows how the total bicycle
+rentals are influenced by the hour of the day. We see that there is a moderate
+correlation, with an r^2 value of 0.1552.<br></span>
+
+```{r, echo=FALSE}
+reg <- lm(formula = cnt ~ season, data = df_master)
+summary(reg)
+```
+
+<span style="color:black"><br>The linear model above shows how the total bicycle
+rentals are influenced by the prevailing season. We see that there is a slight
+correlation, with an r^2 value of 0.06583.<br><br>I chose to include the linear
+models above because, in anticipation of building a linear prediction model, I
+am trying to decide on a set of features. From the correlation chart and other
+plots above, we already have a fair idea of what features may have a strong
+correlation with the bicycle rental numbers; the linear models above help us to
+quantify that influence.</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+# Bivariate analysis
+<br>
+<span style="color:black"><b><i>Talk about some of the relationships you 
+observed in this part of the investigation. How did the feature(s) of interest 
+vary with other features in the dataset?</i></b></span><br>
+<span style="color:red">The number of bicycle rentals correlate strongly with 
+the year and hour of the day. The former can be attributed to the assumption 
+that the popularity of the rental service increased in the second year. This 
+assumption is inconclusive because we only have data from two years. I do not 
+see any particularly strong relationships between the number of bicycle rentals 
+and other features in the dataset like humidity, weather temperature, feeling 
+temperature, etc., (I consider those relationships that have an R^2 value > 0.50
+to be a strong relationship). <br>From the exploration that I conducted into the
+data, I see that about 16% of total bicycle rentals on a given day can be 
+predicted by the prevailing temperature on that day.<br>I also see that a 
+whopping 94% of total bicycle rentals on a given day can be predicted by the 
+number of users that are registered with the service as on that day.<br>Given 
+the preceding findings, I looked to see if there is a strong relationship 
+between the number of casual bicycle renters and any other feature in the 
+dataset. The strongest correlation I found was between casual ridership and 
+normalized temperature - roughly 21% of casual bicycle rentals may be predicted 
+by looking at the normalized prevailing temperatures for the day. </span>
+
+<span style="color:black"><b><i>Did you observe any interesting relationships 
+between the other features (not the main feature(s) of interest)?</i></b></span>
+<br>
+<span style="color:red">I looked at the relationships between some more features
+in the dataset. I see that there is a moderate relationship between humidity and
+the prevailing weather situation of the day. I see that there is a strong 
+relationship between the normalized temperature on a given day and the 
+corresponding season.</span><br>
+
+<span style="color:black"><b><i>What was the strongest relationship you found?
+</i></b></span><br>
+<span style="color:red">The strongest relationship I found was between the total
+bicycle rental numbers and number of registered renters. The other strong 
+relationship I found was between the prevailing daily normalized temperatures 
+and the season.</span><br>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+# Multivariate Plots Section
+<br>
+```{r, echo=FALSE}
+ggplot(aes(x=DoW,y=cnt, group=factor(season), color=factor(season)),
+       data=df_master)+ 
+  stat_summary(fun.y=median, geom="line") + 
+  xlab("Day of the week") +
+  ylab("Total daily rental count") +
+  ggtitle("Total daily bicycle rentals by prevailing season")
+```
+
+<span style="color:black">We see that daily median ridership for each day of the
+week is lowest in spring and highest in the fall seasons. The daily medians 
+numbers follow a closer trend early in the week in summer and winter. I chose
+to include this plot because it shows very clearly the seasonal trends by day
+of the week. From this plot, we see why the prevailing season may be an
+acceptable indicator of bicycle rental numbers.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(x=hr, y=cnt, color=season), data=df_master) + 
+  scale_x_continuous(breaks=-1:24) + 
+  stat_summary(fun.y=median, geom="line")  + 
+  xlab("Hour of the day") +
+  ylab("Total hourly rental count") +
+  ggtitle("Total hourly bicycle rentals by prevailing season")
+```
+
+<span style="color:black">Looking at the median hourly ridership numbers, we see
+that the numbers are lowest in spring, while they follow a closer trend in the 
+other seasons. The numbers are pretty much the same in the early hours of the 
+day(owing to the extremely low rentals). For hourly numbers in summer, fall and 
+winter, we see they closely converge at around 9:00am and between 4:00pm and 
+5:00pm - showing that these are primarily planned rentals. I chose to include
+this chart because it supplements the investigation we performed in the previous
+plot. When we look at the plot above, we see that the seasonal trends hold for
+pretty much the entire range of hours.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(x=DoW, y=cnt, color=weathersit, group=factor(weathersit)), 
+       data=df) + 
+  stat_summary(fun.y=median, geom="line") + 
+  xlab("Day of the week") +
+  ylab("Total daily rental count") +
+  ggtitle("Total daily bicycle rentals by prevailing weather situation")
+```
+
+<span style="color:black">The preceding plot shows the median daily bicycle 
+rentals depending on the prevailing weather situation of the day. Heavy 
+precipitation seems to not deter bicycle renter on Mondays and Tuesdays, while 
+on other days, heavy precipitation ensures low ridership. As predictable, 
+highest bicyle ridership happens on clear days, followed by mild weather days 
+and then on days that see light precipitation. I chose to include this plot
+because it reveals the daily bicycle rental trends by prevailing weather
+situation - and why there may not be a close correlation between the rental
+numbers and prevailing weahter.</span>
+
+```{r, echo=FALSE}
+ggplot(aes(x=hr, y=cnt, color=weathersit), data=df) + 
+  scale_x_continuous(breaks=-1:24) + 
+  stat_summary(fun.y=median, geom="line") + 
+  xlab("Hour of the day") +
+  ylab("Total hourly rental count") +
+  ggtitle("Total hourly bicycle rentals by prevailing weather situation")
+```
+
+<span style="color:black">Lastly, we look at median hourly bicycle rentals by 
+weather situation. As predictable, heavy precipitation ensures lowest bicycle 
+ridership except, curiously, in the earliest hours of the day when it is higher 
+than in any other weather situation. Up until 9:00am, we see that ridership in 
+clear weather and mild weather are almost the same. After 9:00am, rental numbers
+in clear weather are higher than rental numbers in mild weather. Bicycle rentals
+on days with light precipitation are higher than in heavy precipitation, but 
+lower than in clear and mild weather, at all hours of the day. I chose to
+include this plot because it nicely wraps up the investigation we have been
+conducting over the past few plots. The trends are more pronounced for three of
+the prevailing weather classes - and reveals why the correlation may be weak
+between prevailing weather and bicycle rental numbers.</span><br><br>
+
+<span style="color:black">These plots above show how the hourly and daily 
+bicycle rentals depending on the weather situation and the seasons. I wonder how 
+these trends would vary with temperature, humidity and windspeed factors too.
+</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+<br>
+```{r, echo=FALSE}
+ggplot(aes(x=season, y=cnt), data=df) + 
+  geom_boxplot(fill="maroon") + 
+  xlab("Prevailing season") +
+  ylab("Total rental count") +
+  ggtitle("Total bicycle rentals by prevailing season")
+do.call(rbind, by(df$cnt, df$season, summary))
+```
+
+<span style="color:black"> The preceding plot shows the total bicycle rentals
+cut by the season. Viewing the data as a boxplot shows us the median values, as
+well as appreciate the fact that the rental numbers are more bunched up in
+fall and summer(meaning that the total number of rentals stuck in a tight range)
+whereas in spring and winter we saw a greater variance.
+```{r, echo=FALSE}
+ggplot(aes(x=weathersit, y=cnt), data=df) + 
+  geom_boxplot(fill="maroon") + 
+  xlab("Prevailing weather situation") +
+  ylab("Total rental count") +
+  ggtitle("Total bicycle rentals by prevailing weather situation")
+do.call(rbind, by(df$cnt, df$weathersit, summary))
+```
+
+<span style="color:black">The preceding boxplots reinforce our findings that 
+bicycle rentals are lowest in spring, followed by winter and summer and highest 
+in the fall. Looking at the stats for each quartile, we see that the trends are 
+close for the other three seasons except spring. We also see that periods of 
+precipitation show lower bicycle rentals in the initial quartiles than for 
+higher quartiles. <b><i>The main anomaly we see is that for the first quartile, 
+bicycle rentals are higher in periods of heavy precipitation than in periods of 
+light precipitation.</i></b>Towards the higher quartiles, though, we see that 
+bicycle rentals in non-precipitative weather dominates.<br><br>I chose to 
+include these plots because in addition to seeing the median numbers, we also 
+get a feel for whether the bicycle rental numbers varied in a wide range or not.
+<br>
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+<br>Since bicycle rentals are dominated by registered users, and because we saw 
+from prior analysis that bicycle rental trends closely match office/school-going
+patters, I thought that it might be a good idea to explore the trends among 
+casual users. I added a new column to the dataframe to represent the ratio of 
+casual user rentals to the total renters.</span>
+
+```{r, echo=FALSE}
+df_master$casprop <- (df_master$casual + 1)/(df_master$cnt + 1)
+df_master$season <- factor(df_master$season)
+df_master$weathersit <- factor(df_master$weathersit)
+ggplot(data=df_master, aes(casprop, fill=season)) + 
+  geom_bar() + 
+  ggtitle("Proportion of casual users to total rentals by prevailing season")
+```
+
+<span style="color:black">We see that the bulk of ratio frequencies is below 1:2
+casual:total rentals. Of these, we see that casual ridership is highest in 
+winter, followed by summer, spring and fall. I think this may be because winter 
+ridership may be primarily ad-hoc, while in better weather, people make plans 
+and register for bicycle rentals. I chose to include this plot because it 
+reinforces our earlier findings that bicycle rentals are dominated by registered
+users. Coloring the numbers by the prevailing season, we easily see the variance
+by season.</span>
+
+```{r, echo=FALSE}
+ggplot(data=df_master, aes(casprop, fill=weathersit)) + 
+  geom_bar() + 
+  ggtitle("Proportion of casual users to total rentals by prevailing weather")
+```
+
+<span style="color:black">The highest occurences of casual ridership is seen in 
+mild and light precipitative weather, followed by clear weather. There is very 
+little casual ridership in heavy precipitation. This may be because casual 
+riders are those who rent bicycles ad-hoc in slightly inclement weather, while 
+they make plans and register for the service when clear weather is expected. I 
+chose to include this plot because it reinforces our earlier findings that 
+bicycle rentals are dominated by registered users. Coloring the numbers by the 
+prevailing season, we easily see the variance by the prevailing weather
+situation.</span>
+
+```{r, echo=FALSE}
+ggplot(data=df_master, aes(casprop, fill=DoW)) + 
+  geom_density(alpha=0.5) + 
+  ggtitle("Proportion of casual users to total rentals by day of the week")
+```
+
+<span style="color:black">On plotting the frequency of casual ridership ratio to
+the total by day of the week, we see that casual ridership is higher earlier in 
+the week than later. Interestingly, we see that casual ridership is higher on 
+Sundays than on Saturday. I chose to include this plot because it reinforces our
+earlier findings that bicycle rentals are dominated by registered users. 
+Coloring the numbers by the prevailing season, we easily see the variance by the
+prevailing weather situation.</span>
+
+```{r, echo=FALSE}
+ggplot(data=df_master, aes(casprop, fill=as.factor(holiday))) + 
+  geom_density(alpha=0.5) + 
+  ggtitle("Proportion of casual users to total rentals by holiday/working day")
+```
+
+<span style="color:black">Finally, on plotting the frequencies of casual 
+ridership ratios to the total by the fact that the days are holidays/working 
+days, we see that casual ridership is higher on working days than on holidays. 
+We see that on holidays, we see higher ratios of casual riders to total rentals.
+This may be explained by the fact that people like to explore the city on 
+holidays.<br><br>I chose to include this plot because, in prior charts and 
+analyses, we concluded that registered rentals dominate total bicycle rental 
+numbers. That leaves us wondering as to whether this trend holds on 
+"non-commuter days", ie., holidays. This chart explains that question and clears 
+the air.</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+<span style="color:black">All of these plots reinforce the findings that we 
+reached using earlier histograms and plots. Now, in order to build a linaear 
+model to predict bicycle ridership, I'm going to decide on a set of variables 
+that correlate with ridership.</span>
+
+
+```{r, echo=FALSE}
+ggplot(df_master, aes(hr, cnt), fill=hr) + 
+  geom_boxplot(fill="maroon") + 
+  scale_y_log10() + 
+  scale_x_continuous(breaks=-1:24) +
+  facet_wrap(~ season) +
+  xlab("Hour of the day") +
+  ylab("Total hourly rental count") +
+  ggtitle("Hourly bicycle rentals by the prevailing season")
+```
+
+<span style="color:black"><br>I chose to include this plot because we already
+found out, from previous charts and analyses, how certain hours of the day are
+popular with bicycle renters. I wanted to see how the bicycle rental numbers 
+varied by hour of the day and the prevailing seasons, and how the data points 
+were distributed. We see that the trends in this chart follow the trends we saw
+earlier, that the middle portion of the day is a clear favorite among bicycle 
+renters except in spring, where the trends are a little diluted.</span>
+
+```{r, echo=FALSE}
+ggplot(df_master, aes(hr, cnt), fill=hr) + 
+  geom_boxplot(fill="maroon") + 
+  scale_y_log10() + 
+  scale_x_continuous(breaks=-1:24) +
+  facet_wrap(~ weathersit) +
+  xlab("Hour of the day") +
+  ylab("Total hourly rental count") +
+  ggtitle("Hourly bicycle rentals by prevailing weather")
+```
+
+<span style="color:black">From the plots above, we see how clear weather is a
+favorite among bicycle renters, with higher number of hourly rentals happening
+in this weather. The next favorite is mild weather. Periods of light 
+precipitation see moderate rentals, while periods of heavy precipitation see
+almost no rentals. I chose to include this plot because we already found out, 
+from previous charts and analyses, how certain hours of the day are popular with
+bicycle renters and wanted to see how the bicycle rental numbers varied by hour 
+of the day and the prevailing seasons, and how the data points were distributed.
+<br><br>From the plots above and the r^2 values of the linear models above, we 
+can deduce that the features that may help us predict total bicycle rentals on 
+any given day are "registered", "temp", "hr", "season", "weathersit", in the 
+order of confidence. Let's try to build a linear prediction model using these 
+features and see if we can predict bicycle rental numbers with a high level of 
+confidence.</span>
+
+```{r, echo=FALSE}
+m1 <- lm(I(cnt) ~ I(registered), data=df_master)
+m2 <- update(m1, ~ . + temp)
+m3 <- update(m2, ~ . + hr)
+m4 <- update(m3, ~ . + season)
+m5 <- update(m4, ~ . + weathersit)
+m6 <- update(m5, ~ . + windspeed)
+mtable(m1, m2, m3, m4, m5, m6)
+```
+
+<span style="color:black"><br>To the variables I mention in the section above, I 
+added the "windspeed" variable to see if factoring it in would give my 
+prediction model some more accuracy. We see that the prediction model I just 
+built can help predict bicycle rentals on a given day with about 95.5% 
+confidence.</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+# Multivariate Analysis
+
+<span style="color:black"><b><i>Talk about some of the relationships you 
+observed in this part of the investigation. Were there features that 
+strengthened each other in terms of looking at your feature(s) of interest?</i>
+</b></span><br>
+<span style="color:red">Many of the variables interact and strengthen each 
+others' influence over bicycle rental numbers. For example, temperature, 
+humidity and windspeed are tightly related to the weather situation. Each season
+has a weather situation that dominates a majority of the days in that season.
+</span>
+
+<span style="color:black"><b><i>Were there any interesting or surprising 
+interactions between features?</i></b></span><br>
+<span style="color:red">I did not see any surprising relationships between 
+features in the dataset.</span>
+
+<span style="color:black"><b><i>Did you create any models with your dataset? 
+Discuss the strengths and limitations of your model.</i></b></span><br>
+<span style="color:red">Yes, I created a prediction model with the dataset. 
+The main strength of my prediction model is that it is able to predict bicycle 
+rental numbers with about 95.5% confidence. Some limitations of the model: 
+<br>1) The dataset spans only about two years. As we collect more and more data,
+we may need to tweak the model.<br>2) The model does not take into account any 
+special events happening in the city on a given day(this is actually a 
+limitation of the dataset!). If we know whether there were any significant 
+events in the city(rally, game, etc.) on a given day, we could have used that as
+an input into our model.</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+# Final Plots and Summary
+
+## Plot One
+
+```{r, echo=FALSE}
+ggplot(hr_casreg, aes(hr, value, col=variable)) + 
+  scale_x_continuous(breaks=-1:24) + 
+  stat_summary(fun.y=median, geom="line") + 
+  xlab("Hour of the day") +
+  ylab("Median hourly rental count") +
+  ggtitle("Median hourly bicycle rentals")
+```
+
+## Description One
+
+<span style="color:black">In this plot, we see how the registered bicycle rental
+numbers trump casual bicycle rentals. Looking at these trends gave us an early
+indication that looking at the number of registered rentals per hour/day would
+give us a good idea of what the total bicycle rental numbers would look like.
+</span>
+
+## Plot Two
+
+```{r, echo=FALSE}
+ggplot(aes(x=hr, y=cnt, color=season), data=df_master) + 
+  scale_x_continuous(breaks=-1:24) + 
+  stat_summary(fun.y=median, geom="line") + 
+  xlab("Hour of the day") +
+  ylab("Median hourly rental count") +
+  ggtitle("Total hourly bicycle rentals by prevailing season")
+```
+
+## Description Two
+
+<span style="color:black">In the previous plot, we see the hourly trends for 
+bicycle rentals across all the observations in the dataset, colored by seasons. 
+In all seasons, we see that one of the hours peaks occurs at 8:00 AM and the 
+second one at 5:00 PM. These peaks suggest that bicycle rentals are utilized by 
+users who use the bikes to get to work/school(since these activities tend to be 
+between fixed times everyday). We see that the cicycle rental numbers fall on 
+either side of the peak, marking their lowest points during the night hours. The
+general trend holds in all seasons, but the numbers are highest in the fall, 
+followed by summer, winter and spring. I think this is mainly because of 
+temperature, precipitation and other factors associated with the seasons.</span>
+
+## Plot Three
+
+```{r, echo=FALSE}
+ggplot(aes(x=hr, y=cnt, color=weathersit), data=df_master) + 
+  scale_x_continuous(breaks=-1:24) + 
+  stat_summary(fun.y=median, geom="line")  + 
+  xlab("Hour of the day") +
+  ylab("Total hourly rental count") +
+  ggtitle("Median hourly bicycle rentals by prevailing weather situation")
+```
+
+## Description Three
+
+<span style="color:black">In the previous plot, we see hourly trends for bicycle
+rentals across all observations in the dataset, colored by the prevailing 
+weather situation. The trends we see in the previous plot are, to some extent, 
+seen in this plot too. Let's consider the three weather situations - clear, mild
+and light precipitation first. We see the conventional "commuter peaks" at 8:00 
+AM and 5:00PM, with ridership falling off on either sides of the peaks. 
+Interestingly, renter behavior is very different during periods of heavy 
+precipitation. Total rentals during heavy precipitation stays close to none in 
+the early hours of the day, peaking slightly at around 6:00 PM.</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
+
+# Reflection
+
+<span style="color:black">The bicycle rentals dataset consists of 17379 hourly 
+observations of bicycle rentals at a rental agency in Washington DC. I chose 
+this dataset because I wanted to gain some experience in choosing a tidy dataset
+to explore. I see that it is mostly weather-related features that closely 
+influence the bicycle rental numbers on a given day. Factors like temperature, 
+precipitation and windspeed tie closely into the prevailing weather situations 
+and seasons. Therefore, to some extent, these factors influence and strengthen 
+each other. Another feature that influences bicycle rentals is the hour of the 
+day. I think this may be driven by office/school-goers who use bicycles to 
+commute - and I see peaks occuring at the conventional working hours. Also, as 
+expected, we see lesser bicycle rentals during the cold season and during 
+periods of heavy precipitation.<br><br>I searched for a long time and at various
+sources to find a good, tidy dataset to practice my skills on. Many datasets 
+were interesting, but did not meet the conditions for this project. I downloaded 
+and melted several datasets from the gapminder collection and explored them, 
+only to find that the main features did not influence each other and the 
+prediction model that I tried to put together was very weak. Looking back, I 
+consider those attempts to be good ones to cut my teeth on, just that they 
+weren't impressive enough for a final project.<br><br>Ultimately, I found the 
+bicycle rentals dataset, which met all the criteria for the project. One of the 
+first things I did was to plot a ggpairs chart and put together a linear 
+regression model. When I had concluded that the dataset was interesting enough, 
+I set out to explore it in a systematic manner. During the course of the 
+project, I was able to put together a linear prediction model for bicycle 
+rentals. The model is able to predict bicycle rentals with a 95% confidence 
+level.<br><br>In conclusion, I would like to correlate this dataset with events 
+that happened in Washington DC. on each of these days. That would help me see if 
+casual bicycle rentals were driven by people wanting to avoid event-driven 
+crowds on the popular transportation systems. Also, I would love to explore the 
+data for a few more years than contained in this dataset.</span>
+
+<hr style="BORDER-RIGHT: medium none; BORDER-TOP: #cccccc 2px solid; 
+BORDER-LEFT: medium none; BORDER-BOTTOM: medium none; HEIGHT: 1px">
